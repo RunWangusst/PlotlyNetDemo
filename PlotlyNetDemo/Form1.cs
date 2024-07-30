@@ -607,14 +607,14 @@ console.log(div);
                 // 加载 HTML 文件到 WebView2 控件中
                 webView2.Source = new Uri(htmlFilePath);
 
-                //Task.Factory.StartNew(() =>
-                //{
-                //    while (true)
-                //    {
-                //        Thread.Sleep(500);
-                //        UpdateStackedBarData(webView2);
-                //    }
-                //});
+                Task.Factory.StartNew(() =>
+                {
+                    while (true)
+                    {
+                        Thread.Sleep(500);
+                        UpdateStackedBarData(webView2);
+                    }
+                });
             }
             catch (Exception ex)
             {
@@ -673,6 +673,42 @@ console.log(div);
                         "<script src=\"https://cdn.plot.ly/plotly-2.27.1.min.js\"></script>",
                         $"<script>{plotlyScript}</script>"
                     );
+
+                // 插入 JavaScript 代码用于处理交互和与 C# 代码通信
+                var customScript =
+                    @"
+                <script>
+                      var div = document.getElementsByClassName('js-plotly-plot')[0];
+console.log(div);
+        div.addEventListener(""click"", function (ev) {
+            console.log(""我是div plot"");
+            
+            const data = {
+                name: ""John Doe"",
+                age: 30,
+                message: ""Hello from JavaScript!""
+            };
+            window.chrome.webview.postMessage(data);
+
+            ev.stopPropagation();//阻止冒泡
+        }, false);
+        div.addEventListener(""mouseover"", function (ev) {
+            console.log(""鼠标移动了。。。"");
+            ev.stopPropagation();//阻止冒泡
+        }, false);
+        // div.addEventListener('onmouseover',function (data) {
+        //     // var point = data.points[0];
+        //     var message = `You clicked on ${point.data.name} at (${point.x}, ${point.y})`;
+        //     console.log(message);
+        // });
+        // div.on('onclick', function (data) {
+        //     var point = data.points[0];
+        //     var message = `You clicked on ${point.data.name} at (${point.x}, ${point.y})`;
+        //     console.log(message);
+        // });
+
+    </script>";
+                htmlContent = htmlContent.Replace("</body>", customScript + "</body>");
 
                 // 重新写入修改后的 HTML 文件
                 File.WriteAllText(htmlFilePath, htmlContent);
